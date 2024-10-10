@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Conversational AI App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <style>
+        .error {
+            color: red;
+            margin-bottom: 20px;
+        }
+        .audio-player {
+            margin-top: 20px;
+        }
+        .loader {
+            display: none;
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #28a745;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .conversation {
+            margin-top: 20px;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Conversational AI Application</h1>
+        <div id="error-message" class="error"></div>
+        <form id="input-form">
+            <textarea id="text-input" name="text_input" rows="10" cols="50" placeholder="Enter your text here..."></textarea>
+            <br />
+            <button type="submit" id="generate-button">Generate Conversation</button>
+        </form>
+        <!-- Loader -->
+        <div id="loader" class="loader"></div>
+
+        <div id="conversation-container" style="display:none;">
+            <div class="conversation">
+                <h2>Generated Conversation:</h2>
+                <pre id="conversation-text"></pre>
+            </div>
+            <div class="audio-player">
+                <h2>Your Generated Conversation Audio:</h2>
+                <audio controls id="audio-player">
+                    <source id="audio-source" src="" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('input-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            showLoader();
+            var textInput = document.getElementById('text-input').value;
+            var formData = new FormData();
+            formData.append('text_input', textInput);
+
+            fetch('/process', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoader();
+                if (data.error) {
+                    document.getElementById('error-message').innerText = data.error;
+                } else {
+                    document.getElementById('error-message').innerText = '';
+                    document.getElementById('conversation-text').innerText = data.conversation_text;
+                    document.getElementById('audio-source').src = data.audio_file;
+                    document.getElementById('audio-player').load();
+                    document.getElementById('conversation-container').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                hideLoader();
+                document.getElementById('error-message').innerText = 'An unexpected error occurred.';
+                console.error('Error:', error);
+            });
+        });
+
+        function showLoader() {
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('generate-button').disabled = true;
+        }
+
+        function hideLoader() {
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('generate-button').disabled = false;
+        }
+    </script>
+</body>
+</html>
